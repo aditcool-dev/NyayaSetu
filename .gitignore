@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+backend/venv/
+backend/.env
+*.db
+backend/nyayasetu.db
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.DS_Store
+
+# Environment Variables
+.env
+backend/.env
+frontend/.env
+
+# IDEs
+.vscode/
+.idea/
