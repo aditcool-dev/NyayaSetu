@@ -11,8 +11,8 @@ function ConfidenceRing({ score, size = 34, sw = 2.5, delay = 0 }) {
   return (
     <div className="relative inline-flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg className="confidence-ring" width={size} height={size}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E2E8F0" strokeWidth={sw} />
-        <motion.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E2E8F0" strokeWidth={sw} />
+        <motion.circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
           strokeLinecap="round" strokeDasharray={c}
           initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c - score * c }}
           transition={{ duration: 1, delay: delay + 0.3, ease: [0.4, 0, 0.2, 1] }} />
@@ -72,9 +72,8 @@ function WorkflowGraph({ directives }) {
                          hover:border-brand/20 transition-all"
             >
               <div className="text-center">
-                <div className={`w-2 h-2 rounded-full mx-auto mb-1.5 ${
-                  i === 0 ? 'bg-brand' : i === depts.length - 1 ? 'bg-teal' : 'bg-amber-400'
-                }`} />
+                <div className={`w-2 h-2 rounded-full mx-auto mb-1.5 ${i === 0 ? 'bg-brand' : i === depts.length - 1 ? 'bg-teal' : 'bg-amber-400'
+                  }`} />
                 <p className="text-[10px] font-medium text-ink whitespace-nowrap">{dept}</p>
               </div>
             </motion.div>
@@ -202,8 +201,8 @@ export default function Verify() {
                 <AnimatePresence initial={false}>
                   {showSummary
                     ? <motion.p key="f" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
-                        className="text-xs text-ink-light leading-relaxed overflow-hidden">{caseData.summary}</motion.p>
+                      exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
+                      className="text-xs text-ink-light leading-relaxed overflow-hidden">{caseData.summary}</motion.p>
                     : <p className="text-xs text-ink-muted line-clamp-2 leading-relaxed">{caseData.summary}</p>}
                 </AnimatePresence>
               </button>
@@ -258,7 +257,7 @@ export default function Verify() {
                       {dirs.map((dir, dIdx) => {
                         const isOpen = expanded[dir.id];
                         const dotColor = dir.status === 'approved' ? 'bg-emerald-500' :
-                                         dir.status === 'rejected' ? 'bg-red-500' : 'bg-brand';
+                          dir.status === 'rejected' ? 'bg-red-500' : 'bg-brand';
                         return (
                           <motion.div key={dir.id}
                             initial={{ opacity: 0, x: 20 }}
@@ -279,11 +278,10 @@ export default function Verify() {
                                     <div className="flex flex-wrap gap-1.5 mt-2">
                                       <span className="badge bg-surface text-ink-muted border border-border">{dir.responsible_department}</span>
                                       <span className="badge bg-brand/5 text-brand border border-brand/10">{dir.directive_type}</span>
-                                      <span className={`badge border ${
-                                        dir.priority === 'High' ? 'bg-red-50 text-red-600 border-red-200' :
-                                        dir.priority === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                        'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                      }`}>{dir.priority}</span>
+                                      <span className={`badge border ${dir.priority === 'High' ? 'bg-red-50 text-red-600 border-red-200' :
+                                          dir.priority === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                            'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                        }`}>{dir.priority}</span>
                                     </div>
                                   </div>
                                   <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -346,11 +344,10 @@ export default function Verify() {
                                       )}
                                       {dir.status !== 'pending' && (
                                         <div className="text-right">
-                                          <span className={`badge text-xs font-medium ${
-                                            dir.status === 'approved'
+                                          <span className={`badge text-xs font-medium ${dir.status === 'approved'
                                               ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                                               : 'bg-red-50 text-red-600 border border-red-200'
-                                          }`}>{dir.status === 'approved' ? '✓ Approved' : '✗ Flagged'}</span>
+                                            }`}>{dir.status === 'approved' ? '✓ Approved' : '✗ Flagged'}</span>
                                         </div>
                                       )}
                                     </div>
