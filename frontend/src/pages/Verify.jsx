@@ -152,7 +152,7 @@ export default function Verify() {
             <div className="ml-auto"><span className="badge bg-surface text-ink-muted border border-border">PDF</span></div>
           </div>
           <div className="flex-1 bg-surface">
-            <iframe src={`http://localhost:8000/api/v1/cases/${caseId}/pdf`} className="w-full h-full border-0" title="PDF" />
+            <iframe src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/cases/${caseId}/pdf`} className="w-full h-full border-0" title="PDF" />
           </div>
         </motion.div>
 

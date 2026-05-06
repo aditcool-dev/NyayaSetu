@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scale, LayoutDashboard, Upload as UploadIcon, Shield } from 'lucide-react';
+import { Scale, LayoutDashboard, Upload as UploadIcon, Shield, LogOut, User } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import Verify from './pages/Verify';
@@ -12,6 +12,35 @@ function NavLink({ to, children, icon: Icon }) {
     <Link to={to} className={`nav-link flex items-center gap-2 ${isActive ? 'active' : ''}`}>
       <Icon size={15} />{children}
     </Link>
+  );
+}
+
+function UserProfile() {
+  const navigate = useNavigate();
+  const handleExit = () => navigate('/');
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 10 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="ml-2 flex items-center gap-2.5 pl-3 border-l border-border"
+    >
+      <div className="w-7 h-7 rounded-lg bg-brand/10 border border-brand/15 flex items-center justify-center shrink-0">
+        <User size={14} className="text-brand" />
+      </div>
+      <div className="leading-tight">
+        <p className="text-xs font-semibold text-ink">Justice Sharma</p>
+        <p className="text-[10px] text-ink-muted">District Judge</p>
+      </div>
+      <motion.button
+        onClick={handleExit}
+        whileHover={{ scale: 1.08, color: '#EF4444' }}
+        whileTap={{ scale: 0.93 }}
+        className="ml-1 p-1.5 rounded-lg hover:bg-red-50 text-ink-faint hover:text-red-500 transition-colors"
+        title="Exit to Dashboard"
+      >
+        <LogOut size={14} />
+      </motion.button>
+    </motion.div>
   );
 }
 
@@ -43,6 +72,7 @@ function AppContent() {
               </div>
               <span className="text-xs text-emerald-600 font-medium">Online</span>
             </div>
+            <UserProfile />
           </div>
         </div>
       </nav>
