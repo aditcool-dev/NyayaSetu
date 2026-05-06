@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "waggle": {
+      "command": "/Users/abhigyanshekhar/.local/bin/waggle-mcp",
+      "args": ["serve"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "prime_context",
+        "query_graph",
+        "observe_conversation",
+        "store_node",
+        "aggregate_graph"
+      ]
+    }
+  }
+}

@@ -5,7 +5,10 @@ import numpy as np
 from PIL import Image
 import os
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Update if needed
+if os.name == 'nt':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+else:
+    pytesseract.pytesseract.tesseract_cmd = 'tesseract'
 
 def preprocess_image(image: Image.Image) -> Image.Image:
     open_cv_image = np.array(image)
@@ -47,7 +50,7 @@ def extract_text_from_pdf(pdf_path: str) -> dict:
             for i, p_data in enumerate(pages_data):
                 if p_data["method"] == "needs_ocr":
                     page = pdf.pages[i]
-                    im = page.to_image(resolution=300).original
+                    im = page.to_image(resolution=150).original
                     processed_im = preprocess_image(im)
                     text = pytesseract.image_to_string(processed_im)
                     pages_data[i]["text"] = text
