@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, Sparkles, Shield, Zap, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadCase } from '../services/api';
@@ -16,6 +17,7 @@ export default function Upload() {
   const [error, setError] = useState(null);
   const stepTimerRef = useRef(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { addNotification } = useAppStore();
 
   const STEPS = [
@@ -33,6 +35,8 @@ export default function Upload() {
     try {
       const data = await uploadCase(file);
       clearStepTimer(); setStep(3);
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       addNotification({ title: t('upload_success_title'), message: `${data.case_number} — ${data.directives?.length || 0} directives extracted`, type: 'success' });
       toast.success(`${data.directives?.length || 0} directives extracted`);
       setTimeout(() => navigate(`/verify/${data.id}`), 900);

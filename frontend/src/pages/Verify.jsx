@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
-import { getCase, verifyDirective, listCases, getDashboardStats } from '../services/api';
+import { getCase, verifyDirective, listCases, getDashboardStats, API_URL } from '../services/api';
 import DirectiveCard from '../components/DirectiveCard';
 import BatchActionBar from '../components/BatchActionBar';
 import FilterBar from '../components/FilterBar';
@@ -430,6 +430,8 @@ function VerifyCase({ caseId }) {
       verifyDirective(id, { action, notes, officer_name: 'Justice Sharma' }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['case', caseId] });
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       addNotification({
         type: variables.action === 'approve' ? 'success' : 'warning',
         title: `Directive ${variables.action === 'approve' ? 'Approved' : 'Rejected'}`,
@@ -452,6 +454,8 @@ function VerifyCase({ caseId }) {
       ),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['case', caseId] });
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       clearSelection();
       addNotification({
         type: 'success',
@@ -599,7 +603,7 @@ function VerifyCase({ caseId }) {
             </div>
             {/* PDF iframe */}
             <iframe
-              src={`http://localhost:8000/api/v1/cases/${caseId}/pdf`}
+              src={`${API_URL}/cases/${caseId}/pdf`}
               title="Judgment PDF"
               className="flex-1 w-full"
               style={{ border: 'none', background: '#1A1A1A' }}
