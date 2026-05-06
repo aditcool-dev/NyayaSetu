@@ -1,7 +1,5 @@
 import pdfplumber
 import pytesseract
-import cv2
-import numpy as np
 from PIL import Image
 import os
 import platform
@@ -12,11 +10,18 @@ if platform.system() == 'Windows':
 # On macOS/Linux, tesseract is found via PATH automatically
 
 def preprocess_image(image: Image.Image) -> Image.Image:
-    open_cv_image = np.array(image)
-    open_cv_image = open_cv_image[:, :, ::-1].copy() 
-    gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    return Image.fromarray(thresh)
+    """Preprocess image for OCR. Falls back to raw image if cv2 is unavailable."""
+    try:
+        import cv2
+        import numpy as np
+        open_cv_image = np.array(image)
+        open_cv_image = open_cv_image[:, :, ::-1].copy() 
+        gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        return Image.fromarray(thresh)
+    except ImportError:
+        # cv2 not installed — return image as-is (OCR still works, just less accurate)
+        return image.convert("L")
 
 def extract_text_from_pdf(pdf_path: str) -> dict:
     pages_data = []
