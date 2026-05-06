@@ -177,13 +177,23 @@ async def process_judgment(
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
     file_path = _save_upload(file)
+    
+    logger.info(f"Processing file: {file.filename} at {file_path}")
 
     try:
         # Import here to avoid circular imports and allow path setup
         from pipeline.orchestrator import run_pipeline_async
-
+        
+        logger.info("Starting pipeline execution...")
         pipeline_result = await run_pipeline_async(file_path)
+        logger.info(f"Pipeline completed successfully. Directives: {len(pipeline_result.get('directives', []))}")
 
+    except ImportError as e:
+        logger.error(f"Import error in pipeline: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Pipeline module import failed: {str(e)}. Check that all dependencies are installed."
+        )
     except Exception as e:
         logger.error(f"Pipeline failed for {file.filename}: {e}", exc_info=True)
         raise HTTPException(
@@ -193,7 +203,9 @@ async def process_judgment(
 
     # Persist to DB
     try:
+        logger.info("Persisting results to database...")
         db_case = _persist_to_db(pipeline_result, file_path, db)
+        logger.info(f"Case saved with ID: {db_case.id}")
     except Exception as e:
         logger.error(f"DB persistence failed: {e}", exc_info=True)
         raise HTTPException(

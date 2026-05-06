@@ -73,8 +73,19 @@ async def analyze_case_async(
             "elapsed_sec": float
         }
     """
-    from google import genai
-    from google.genai import types
+    start_time = time.time()
+    
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError as e:
+        logger.error(f"Failed to import google.genai: {e}")
+        return {
+            "summary": "Case analysis unavailable - google.genai not installed",
+            "legal_takeaway": None,
+            "departmental_impact": None,
+            "elapsed_sec": 0.0,
+        }
 
     api_key = os.getenv("GEMINI_API_KEY", "").strip(' "\'')
     if not api_key:
@@ -86,8 +97,16 @@ async def analyze_case_async(
             "elapsed_sec": 0.0,
         }
 
-    client = genai.Client(api_key=api_key)
-    start_time = time.time()
+    try:
+        client = genai.Client(api_key=api_key)
+    except Exception as e:
+        logger.error(f"Failed to create Gemini client: {e}")
+        return {
+            "summary": f"Case analysis unavailable - client initialization failed: {str(e)}",
+            "legal_takeaway": None,
+            "departmental_impact": None,
+            "elapsed_sec": 0.0,
+        }
 
     # Truncate text if too long (keep first 50k chars for context)
     truncated_text = full_text[:50000] if len(full_text) > 50000 else full_text
@@ -126,6 +145,20 @@ async def analyze_case_async(
                 "elapsed_sec": elapsed,
             }
 
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse case analysis JSON response: {e}")
+            if attempt < max_retries - 1:
+                wait_time = 5 * (attempt + 1)
+                logger.warning(f"Retrying in {wait_time}s ({attempt + 2}/{max_retries})")
+                await asyncio.sleep(wait_time)
+            else:
+                elapsed = round(time.time() - start_time, 2)
+                return {
+                    "summary": "Case analysis failed - invalid JSON response from API",
+                    "legal_takeaway": None,
+                    "departmental_impact": None,
+                    "elapsed_sec": elapsed,
+                }
         except Exception as e:
             error_str = str(e)
             if "429" in error_str and attempt < max_retries - 1:
@@ -146,7 +179,7 @@ async def analyze_case_async(
                 logger.error(f"Case analysis failed after {max_retries} retries: {e}")
                 elapsed = round(time.time() - start_time, 2)
                 return {
-                    "summary": f"Analysis failed: {str(e)}",
+                    "summary": f"Case analysis failed: {str(e)}",
                     "legal_takeaway": None,
                     "departmental_impact": None,
                     "elapsed_sec": elapsed,
