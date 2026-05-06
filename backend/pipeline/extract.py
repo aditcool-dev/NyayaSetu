@@ -87,6 +87,10 @@ def _ocr_page(page: fitz.Page, dpi: int = 300) -> str:
         import pytesseract
         from PIL import Image
         import io
+        import platform
+
+        if platform.system() == 'Windows':
+            pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
         # Render page to pixmap at target DPI
         mat = fitz.Matrix(dpi / 72, dpi / 72)  # 72 DPI is PDF default
