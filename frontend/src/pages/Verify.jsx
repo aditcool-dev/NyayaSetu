@@ -688,7 +688,7 @@ function VerifyCase({ caseId }) {
           </Reveal>
 
           {/* AI Summary collapsible */}
-          {caseData.ai_summary && (
+          {caseData.summary && (
             <Reveal delay={0.05}>
               <div
                 className="chamber-card overflow-hidden"
@@ -722,7 +722,7 @@ function VerifyCase({ caseId }) {
                         className="px-4 pb-4 pt-1 text-xs leading-relaxed border-t"
                         style={{ color: '#A3A3A3', borderColor: OBSIDIAN_3 }}
                       >
-                        {caseData.ai_summary}
+                        {caseData.summary}
                       </div>
                     </motion.div>
                   )}
@@ -742,9 +742,12 @@ function VerifyCase({ caseId }) {
                   borderLeft: `3px solid ${GOLD}`,
                 }}
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: GOLD }}>
-                  Key Legal Takeaway
-                </p>
+                <div className="flex items-center gap-2 mb-2">
+                  <Scale size={12} style={{ color: GOLD }} />
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
+                    Legal Takeaway
+                  </p>
+                </div>
                 <p className="text-xs leading-relaxed" style={{ color: '#A3A3A3' }}>
                   {rawTakeaway}
                 </p>
@@ -753,7 +756,7 @@ function VerifyCase({ caseId }) {
           )}
 
           {/* Dept Impact */}
-          {caseData.dept_impact && (
+          {caseData.impact_on_departments && (
             <Reveal delay={0.1}>
               <div
                 className="chamber-card p-4"
@@ -763,11 +766,14 @@ function VerifyCase({ caseId }) {
                   borderLeft: `3px solid ${GOLD}`,
                 }}
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: GOLD }}>
-                  Departmental Impact
-                </p>
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp size={12} style={{ color: GOLD }} />
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
+                    Dept. Impact
+                  </p>
+                </div>
                 <p className="text-xs leading-relaxed" style={{ color: '#A3A3A3' }}>
-                  {caseData.dept_impact}
+                  {caseData.impact_on_departments}
                 </p>
               </div>
             </Reveal>
