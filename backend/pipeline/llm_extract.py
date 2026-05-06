@@ -49,13 +49,13 @@ Extract EVERY directive from the text below — including:
 
 For each directive, return a JSON array where each element has EXACTLY this structure:
 {{
-  "directive_text": "verbatim quote from the judgment text",
+  "directive_text": "FULL verbatim quote of the complete directive from the judgment - include the entire sentence or paragraph, not just a fragment",
   "responsible_authority": "who must act — use case header parties if unclear, or 'AMBIGUOUS — human review required'",
   "deadline_relative": "e.g., 'within 30 days' or null if no timeframe mentioned",
   "deadline_absolute": "ISO 8601 date resolved from judgment_date + deadline_relative, or null",
   "directive_type": "explicit | implied | conditional",
   "confidence": 0.0 to 1.0,
-  "source_paragraph": "exact paragraph number or ID from the text",
+  "source_paragraph": "FULL TEXT of the source paragraph containing this directive - copy the entire paragraph verbatim, not just a number or reference",
   "source_page": integer page number
 }}
 
@@ -67,8 +67,21 @@ CRITICAL RULES:
    - 0.70–0.84: Implied obligation ("may consider", "appropriate steps") with identifiable authority
    - 0.50–0.69: Conditional directive or ambiguous authority
    - Below 0.50: Flag for human review
-4. "directive_text" must be verbatim from the judgment — do NOT paraphrase.
-5. Return ONLY the JSON array. No explanation, no markdown, no preamble.
+4. "directive_text" must be the COMPLETE directive text verbatim from the judgment — include the full sentence/paragraph, do NOT truncate or paraphrase.
+5. "source_paragraph" must be the FULL TEXT of the paragraph where this directive appears — copy the entire paragraph verbatim, NOT just a number like "18" or "para 12".
+6. Return ONLY the JSON array. No explanation, no markdown, no preamble.
+
+EXAMPLE of correct extraction:
+{{
+  "directive_text": "The State Government shall constitute a committee within 30 days to examine the implementation of the scheme and submit a report to this Court.",
+  "responsible_authority": "State Government",
+  "deadline_relative": "within 30 days",
+  "deadline_absolute": "2024-06-15",
+  "directive_type": "explicit",
+  "confidence": 0.92,
+  "source_paragraph": "In view of the above, we direct that the State Government shall constitute a committee within 30 days to examine the implementation of the scheme and submit a report to this Court. The committee shall consist of representatives from the concerned departments.",
+  "source_page": 14
+}}
 
 CASE HEADER (use this to identify responsible authorities):
 {case_header}

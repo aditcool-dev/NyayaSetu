@@ -316,3 +316,35 @@ def pipeline_health():
             "sentence_transformers": "Optional — falls back to exact string deduplication",
         }
     }
+
+
+@router.get("/debug/{case_id}")
+def debug_case_directives(case_id: int, db: Session = Depends(get_db)):
+    """
+    Debug endpoint to check directive data for a case.
+    Shows raw directive data to help diagnose extraction issues.
+    """
+    case = db.query(Case).filter(Case.id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    directives_debug = []
+    for d in case.directives:
+        directives_debug.append({
+            "id": d.id,
+            "directive_text": d.directive_text,
+            "directive_text_length": len(d.directive_text) if d.directive_text else 0,
+            "source_text": d.source_text,
+            "source_text_length": len(d.source_text) if d.source_text else 0,
+            "source_page": d.source_page,
+            "responsible_department": d.responsible_department,
+            "confidence_score": d.confidence_score,
+            "status": d.status,
+        })
+    
+    return {
+        "case_id": case_id,
+        "case_number": case.case_number,
+        "total_directives": len(case.directives),
+        "directives": directives_debug,
+    }

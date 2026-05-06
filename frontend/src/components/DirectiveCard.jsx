@@ -147,8 +147,8 @@ export default function DirectiveCard({ directive, onVerify, isVerifying, onPage
             </div>
 
             {/* Directive text */}
-            <p className="text-sm font-medium text-white leading-snug line-clamp-2">
-              {directive.directive_text}
+            <p className="text-sm font-medium text-white leading-snug">
+              {directive.directive_text || directive.source_text || "[No directive text available]"}
             </p>
 
             {/* Meta row */}
@@ -224,8 +224,13 @@ export default function DirectiveCard({ directive, onVerify, isVerifying, onPage
                 <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: GOLD }}>
                   📄 {t('dir_source')} — {t('dir_source_page')} {directive.source_page}
                 </p>
-                <p className="text-xs italic leading-relaxed" style={{ color: '#A3A3A3' }}>
-                  "{directive.source_text || directive.directive_text}"
+                <p className="text-xs leading-relaxed" style={{ color: '#A3A3A3' }}>
+                  {directive.source_text && directive.source_text.length > 10 
+                    ? `"${directive.source_text}"`
+                    : directive.directive_text 
+                      ? `"${directive.directive_text}"`
+                      : "[Source text not available]"
+                  }
                 </p>
               </div>
 
