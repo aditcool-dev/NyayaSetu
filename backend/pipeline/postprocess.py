@@ -167,7 +167,18 @@ def _compute_embeddings(texts: List[str]):
     - sentence-transformers is a large dependency (~500MB).
     - If not installed, we fall back to exact string matching.
     - This keeps the pipeline functional in minimal environments.
+    
+    WHY environment check:
+    - On low-memory environments (Render free tier: 512MB), loading ML models
+      causes OOM crashes. Skip ML features in production if DISABLE_ML_FEATURES=true.
     """
+    import os
+    
+    # Skip ML features in low-memory environments
+    if os.getenv("DISABLE_ML_FEATURES", "false").lower() == "true":
+        logger.info("ML features disabled via DISABLE_ML_FEATURES env var")
+        return None
+    
     try:
         from sentence_transformers import SentenceTransformer
         model = SentenceTransformer("all-MiniLM-L6-v2")  # fast, 80MB, good quality
@@ -177,6 +188,9 @@ def _compute_embeddings(texts: List[str]):
             "sentence-transformers not installed; "
             "falling back to exact string deduplication"
         )
+        return None
+    except Exception as e:
+        logger.warning(f"Failed to load sentence-transformers: {e}. Using exact matching.")
         return None
 
 
