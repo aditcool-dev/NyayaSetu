@@ -83,16 +83,19 @@ def _persist_to_db(
         from datetime import timedelta
         appeal_end = jd_dt + timedelta(days=90)
 
-    # Use case analysis for summary and insights
-    summary = case_analysis.get("summary") or (
-        f"Processed by NyayaSetu pipeline. "
-        f"{metrics.get('final_directives', 0)} directives extracted. "
-        f"Token reduction: {metrics.get('token_reduction_pct', 0)}%. "
-        f"Pipeline time: {metrics.get('total_pipeline_time_sec', 0)}s."
-    )
+    # Use case analysis for summary and insights (with fallbacks)
+    summary = case_analysis.get("summary") if case_analysis else None
+    
+    if not summary:
+        # Fallback to simple summary if case analysis failed
+        summary = (
+            f"{metadata.get('case_no', 'Case')} - "
+            f"{metadata.get('court', 'Court')}. "
+            f"{metrics.get('final_directives', 0)} directives extracted."
+        )
 
-    legal_takeaway = case_analysis.get("legal_takeaway")
-    dept_impact = case_analysis.get("departmental_impact")
+    legal_takeaway = case_analysis.get("legal_takeaway") if case_analysis else None
+    dept_impact = case_analysis.get("departmental_impact") if case_analysis else None
 
     db_case = Case(
         case_number=metadata.get("case_no") or "Unknown",

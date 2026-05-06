@@ -83,7 +83,7 @@ def _check_acceptance_criteria(metrics: Dict[str, Any]) -> Dict[str, bool]:
 
 async def run_pipeline_async(
     pdf_path: str,
-    max_concurrent_llm_calls: int = 2,  # Reduced from 5 to 2 to avoid rate limits
+    max_concurrent_llm_calls: int = 5,  # Back to original value that was working
     ocr_quality_threshold: float = 0.4,
     chunk_max_tokens: int = 3000,
     chunk_overlap_tokens: int = 200,
@@ -214,23 +214,36 @@ async def run_pipeline_async(
         log(f"  ⚠ {llm_result['failed_chunks']} chunks failed — check API key and rate limits")
 
     # -------------------------------------------------------------------------
-    # MODULE 6.5: Case-Level Analysis
+    # MODULE 6.5: Case-Level Analysis (Optional)
     # -------------------------------------------------------------------------
     log("MODULE 6.5: Case-Level Analysis (summary, legal takeaway, dept impact)")
     m6_5_start = time.time()
 
-    from pipeline.case_analyzer import analyze_case_async
+    # Make case analysis optional - if it fails, continue without it
+    case_analysis = {
+        "summary": None,
+        "legal_takeaway": None,
+        "departmental_impact": None,
+        "elapsed_sec": 0.0,
+    }
+    
+    try:
+        from pipeline.case_analyzer import analyze_case_async
 
-    # Reconstruct full text from cleaned pages
-    full_text = "\n\n".join(
-        f"--- Page {p['page_num']} ---\n{p['text']}"
-        for p in clean_result["cleaned_pages"]
-    )
+        # Reconstruct full text from cleaned pages
+        full_text = "\n\n".join(
+            f"--- Page {p['page_num']} ---\n{p['text']}"
+            for p in clean_result["cleaned_pages"]
+        )
 
-    case_analysis = await analyze_case_async(full_text, metadata)
-
-    m6_5_time = round(time.time() - m6_5_start, 2)
-    log(f"  → Case analysis complete in {m6_5_time}s")
+        case_analysis = await analyze_case_async(full_text, metadata)
+        
+        m6_5_time = round(time.time() - m6_5_start, 2)
+        log(f"  → Case analysis complete in {m6_5_time}s")
+    except Exception as e:
+        m6_5_time = round(time.time() - m6_5_start, 2)
+        log(f"  ⚠ Case analysis skipped due to error: {e}")
+        log(f"  → Pipeline will continue without case analysis")
 
     # -------------------------------------------------------------------------
     # MODULE 7: Post-Processing & Deduplication
