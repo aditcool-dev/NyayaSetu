@@ -108,6 +108,7 @@ def _parse_llm_response(response_text: str, chunk_id: int) -> List[Dict[str, Any
     WHY robust parsing (not just json.loads):
     - LLMs sometimes wrap JSON in markdown code blocks.
     - LLMs sometimes add trailing commas (invalid JSON).
+    - Responses may be truncated due to token limits.
     - We try multiple extraction strategies before giving up.
     """
     if not response_text or not response_text.strip():
@@ -123,8 +124,8 @@ def _parse_llm_response(response_text: str, chunk_id: int) -> List[Dict[str, Any
             return result
         if isinstance(result, dict) and "directives" in result:
             return result["directives"]
-    except json.JSONDecodeError:
-        pass
+    except json.JSONDecodeError as e:
+        logger.debug(f"Chunk {chunk_id}: Direct parse failed: {e}")
 
     # Strategy 2: Strip markdown code blocks
     code_block_match = re.search(r'```(?:json)?\s*([\s\S]+?)\s*```', text)
@@ -146,13 +147,42 @@ def _parse_llm_response(response_text: str, chunk_id: int) -> List[Dict[str, Any
         except json.JSONDecodeError:
             pass
 
-    # Strategy 4: Fix common JSON issues (trailing commas)
+    # Strategy 4: Fix common JSON issues (trailing commas, incomplete arrays)
     try:
+        # Remove trailing commas before closing brackets
         fixed = re.sub(r',\s*([}\]])', r'\1', text)
+        
+        # If array is incomplete (no closing bracket), try to close it
+        if fixed.strip().startswith('[') and not fixed.strip().endswith(']'):
+            # Find the last complete object
+            last_brace = fixed.rfind('}')
+            if last_brace > 0:
+                fixed = fixed[:last_brace + 1] + ']'
+                logger.warning(f"Chunk {chunk_id}: Truncated response detected, attempting to close JSON array")
+        
         result = json.loads(fixed)
         if isinstance(result, list):
+            logger.info(f"Chunk {chunk_id}: Successfully parsed after fixing JSON issues")
             return result
     except json.JSONDecodeError:
+        pass
+
+    # Strategy 5: Extract individual objects if array parsing fails
+    try:
+        # Find all complete JSON objects in the text
+        objects = []
+        for match in re.finditer(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text):
+            try:
+                obj = json.loads(match.group(0))
+                if isinstance(obj, dict) and 'directive_text' in obj:
+                    objects.append(obj)
+            except json.JSONDecodeError:
+                continue
+        
+        if objects:
+            logger.warning(f"Chunk {chunk_id}: Extracted {len(objects)} individual objects from malformed response")
+            return objects
+    except Exception:
         pass
 
     logger.error(f"Chunk {chunk_id}: Could not parse LLM response as JSON. First 200 chars: {text[:200]}")
@@ -167,6 +197,11 @@ async def _call_gemini_async(
     """
     Async wrapper for Gemini API call with retry logic.
     Uses the new google-genai SDK.
+    
+    Handles:
+    - 429 Rate Limit: Exponential backoff (30s, 60s, 120s)
+    - 503 Service Unavailable: Exponential backoff (10s, 20s, 40s)
+    - Other errors: Linear backoff (5s, 10s, 15s)
     """
     from google import genai
     from google.genai import types
@@ -188,7 +223,7 @@ async def _call_gemini_async(
                     config=types.GenerateContentConfig(
                         temperature=0.05,
                         top_p=0.95,
-                        max_output_tokens=4096,
+                        max_output_tokens=8192,  # Increased from 4096 to reduce truncation
                         response_mime_type="application/json",
                     ),
                 )
@@ -197,15 +232,36 @@ async def _call_gemini_async(
 
         except Exception as e:
             error_str = str(e)
-            if "429" in error_str and attempt < max_retries - 1:
-                wait_time = 30 * (2 ** attempt)
-                logger.warning(
-                    f"Chunk {chunk_id}: Rate limited (429). "
-                    f"Waiting {wait_time}s before retry {attempt + 2}/{max_retries}"
-                )
-                await asyncio.sleep(wait_time)
+            
+            # Handle 429 Rate Limit with exponential backoff
+            if "429" in error_str:
+                if attempt < max_retries - 1:
+                    wait_time = 30 * (2 ** attempt)  # 30s, 60s, 120s
+                    logger.warning(
+                        f"Chunk {chunk_id}: Rate limited (429). "
+                        f"Waiting {wait_time}s before retry {attempt + 2}/{max_retries}"
+                    )
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.error(f"Chunk {chunk_id}: Rate limit exceeded after {max_retries} retries")
+                    raise
+            
+            # Handle 503 Service Unavailable with exponential backoff
+            elif "503" in error_str or "UNAVAILABLE" in error_str:
+                if attempt < max_retries - 1:
+                    wait_time = 10 * (2 ** attempt)  # 10s, 20s, 40s
+                    logger.warning(
+                        f"Chunk {chunk_id}: Service unavailable (503). "
+                        f"High demand detected. Waiting {wait_time}s before retry {attempt + 2}/{max_retries}"
+                    )
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.error(f"Chunk {chunk_id}: Service unavailable after {max_retries} retries")
+                    raise
+            
+            # Handle other errors with linear backoff
             elif attempt < max_retries - 1:
-                wait_time = 5 * (attempt + 1)
+                wait_time = 5 * (attempt + 1)  # 5s, 10s, 15s
                 logger.warning(
                     f"Chunk {chunk_id}: API error '{error_str}'. "
                     f"Retrying in {wait_time}s ({attempt + 2}/{max_retries})"

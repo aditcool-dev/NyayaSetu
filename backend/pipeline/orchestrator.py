@@ -83,7 +83,7 @@ def _check_acceptance_criteria(metrics: Dict[str, Any]) -> Dict[str, bool]:
 
 async def run_pipeline_async(
     pdf_path: str,
-    max_concurrent_llm_calls: int = 5,
+    max_concurrent_llm_calls: int = 2,  # Reduced from 5 to 2 to avoid rate limits
     ocr_quality_threshold: float = 0.4,
     chunk_max_tokens: int = 3000,
     chunk_overlap_tokens: int = 200,
