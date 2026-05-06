@@ -96,7 +96,7 @@ def analyze_judgment(text: str) -> Dict[Any, Any]:
         except Exception as e:
             error_str = str(e)
             if "429" in error_str and attempt < max_retries - 1:
-                wait_time = 60 * (attempt + 1)
+                wait_time = 5 * (attempt + 1)
                 print(f"Rate limited (429). Waiting {wait_time}s before retry {attempt + 2}/{max_retries}...")
                 time.sleep(wait_time)
             else:

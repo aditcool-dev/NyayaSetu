@@ -51,7 +51,7 @@ def extract_text_from_pdf(pdf_path: str) -> dict:
             for i, p_data in enumerate(pages_data):
                 if p_data["method"] == "needs_ocr":
                     page = pdf.pages[i]
-                    im = page.to_image(resolution=300).original
+                    im = page.to_image(resolution=150).original
                     processed_im = preprocess_image(im)
                     text = pytesseract.image_to_string(processed_im)
                     pages_data[i]["text"] = text
