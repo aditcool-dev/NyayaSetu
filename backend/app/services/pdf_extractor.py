@@ -4,8 +4,12 @@ import cv2
 import numpy as np
 from PIL import Image
 import os
+import platform
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Update if needed
+# Auto-detect Tesseract path based on OS
+if platform.system() == 'Windows':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# On macOS/Linux, tesseract is found via PATH automatically
 
 def preprocess_image(image: Image.Image) -> Image.Image:
     open_cv_image = np.array(image)

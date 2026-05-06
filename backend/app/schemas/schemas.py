@@ -1,7 +1,31 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from pydantic import BaseModel
+from typing import List, Optional
 from datetime import datetime
 
+
+# ── Audit Log ────────────────────────────────────────────────────────────────
+class AuditLogBase(BaseModel):
+    action: str
+    officer_name: str
+    previous_value: Optional[str] = None
+    new_value: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class AuditLogCreate(AuditLogBase):
+    directive_id: int
+
+
+class AuditLog(AuditLogBase):
+    id: int
+    directive_id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ── Directive ─────────────────────────────────────────────────────────────────
 class DirectiveBase(BaseModel):
     directive_text: str
     directive_type: str
@@ -9,24 +33,28 @@ class DirectiveBase(BaseModel):
     workflow_category: str
     trigger_condition: Optional[str] = None
     responsible_department: str
-    deadline: Optional[datetime]
+    deadline: Optional[datetime] = None
     confidence_score: float
     source_page: int
     source_text: str
 
+
 class DirectiveCreate(DirectiveBase):
     pass
+
 
 class Directive(DirectiveBase):
     id: int
     case_id: int
     status: str
     created_at: datetime
+    audit_logs: List[AuditLog] = []
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
+
+# ── Case ──────────────────────────────────────────────────────────────────────
 class CaseBase(BaseModel):
     case_number: str
     court: str
@@ -41,8 +69,10 @@ class CaseBase(BaseModel):
     appeal_window_end: datetime
     pdf_path: str
 
+
 class CaseCreate(CaseBase):
     pass
+
 
 class Case(CaseBase):
     id: int
@@ -51,30 +81,12 @@ class Case(CaseBase):
     directives: List[Directive] = []
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
-class AuditLogBase(BaseModel):
-    action: str
-    officer_name: str
-    previous_value: Optional[str] = None
-    new_value: Optional[str] = None
-    notes: Optional[str] = None
 
-class AuditLogCreate(AuditLogBase):
-    directive_id: int
-
-class AuditLog(AuditLogBase):
-    id: int
-    directive_id: int
-    timestamp: datetime
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-        
+# ── Verify Request ────────────────────────────────────────────────────────────
 class VerifyDirectiveRequest(BaseModel):
-    action: str # approve, reject, edit
+    action: str                          # approve | reject | edit
     officer_name: str
     notes: Optional[str] = None
     edited_text: Optional[str] = None

@@ -153,46 +153,39 @@ async def _call_gemini_async(
 ) -> str:
     """
     Async wrapper for Gemini API call with retry logic.
-
-    WHY async (not threading):
-    - Gemini API calls are I/O-bound (waiting for network response).
-    - asyncio is more efficient than threading for I/O-bound tasks.
-    - asyncio.gather() runs all chunks concurrently in a single thread.
+    Uses the new google-genai SDK.
     """
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
 
     api_key = os.getenv("GEMINI_API_KEY", "").strip(' "\'')
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable not set")
 
-    genai.configure(api_key=api_key)
-
-    generation_config = {
-        "temperature": 0.05,   # Very low: we want deterministic extraction, not creativity
-        "top_p": 0.95,
-        "max_output_tokens": 4096,
-        "response_mime_type": "application/json",
-    }
-
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
-        generation_config=generation_config,
-    )
+    client = genai.Client(api_key=api_key)
 
     for attempt in range(max_retries):
         try:
-            # Run the synchronous Gemini call in a thread pool to avoid blocking
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: model.generate_content(prompt)
+                lambda: client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.05,
+                        top_p=0.95,
+                        max_output_tokens=4096,
+                        response_mime_type="application/json",
+                    ),
+                )
             )
             return response.text
 
         except Exception as e:
             error_str = str(e)
             if "429" in error_str and attempt < max_retries - 1:
-                wait_time = 30 * (2 ** attempt)  # exponential backoff: 30s, 60s, 120s
+                wait_time = 30 * (2 ** attempt)
                 logger.warning(
                     f"Chunk {chunk_id}: Rate limited (429). "
                     f"Waiting {wait_time}s before retry {attempt + 2}/{max_retries}"

@@ -275,10 +275,14 @@ def pipeline_health():
         pass
 
     try:
-        import google.generativeai
+        import google.genai  # new SDK
         health["google_generativeai"] = True
     except ImportError:
-        pass
+        try:
+            import google.generativeai  # old SDK fallback
+            health["google_generativeai"] = True
+        except ImportError:
+            pass
 
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     health["gemini_api_key"] = bool(api_key and len(api_key) > 10)
