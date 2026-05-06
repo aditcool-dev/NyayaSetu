@@ -60,6 +60,7 @@ def _persist_to_db(
     metadata = pipeline_result.get("metadata", {})
     metrics = pipeline_result.get("metrics", {})
     directives = pipeline_result.get("directives", [])
+    case_analysis = pipeline_result.get("case_analysis", {})
 
     # Parse judgment date
     jd_str = metadata.get("judgment_date") or metrics.get("judgment_date_parsed")
@@ -82,14 +83,16 @@ def _persist_to_db(
         from datetime import timedelta
         appeal_end = jd_dt + timedelta(days=90)
 
-    # Build summary from pipeline log
-    pipeline_log = pipeline_result.get("pipeline_log", [])
-    summary = (
+    # Use case analysis for summary and insights
+    summary = case_analysis.get("summary") or (
         f"Processed by NyayaSetu pipeline. "
         f"{metrics.get('final_directives', 0)} directives extracted. "
         f"Token reduction: {metrics.get('token_reduction_pct', 0)}%. "
         f"Pipeline time: {metrics.get('total_pipeline_time_sec', 0)}s."
     )
+
+    legal_takeaway = case_analysis.get("legal_takeaway")
+    dept_impact = case_analysis.get("departmental_impact")
 
     db_case = Case(
         case_number=metadata.get("case_no") or "Unknown",
@@ -100,8 +103,8 @@ def _persist_to_db(
         parties_petitioner=metadata.get("parties_petitioner") or "Unknown",
         parties_respondent=metadata.get("parties_respondent") or "Unknown",
         summary=summary,
-        key_legal_takeaway=json.dumps(metrics),  # store metrics in this field
-        impact_on_departments=json.dumps(pipeline_result.get("acceptance_criteria", {})),
+        key_legal_takeaway=legal_takeaway,
+        impact_on_departments=dept_impact,
         appeal_window_end=appeal_end,
         pdf_path=pdf_path,
         status="pending",
@@ -202,6 +205,9 @@ async def process_judgment(
         "case_id": db_case.id,
         "case_number": db_case.case_number,
         "court": db_case.court,
+        "summary": db_case.summary,
+        "legal_takeaway": db_case.key_legal_takeaway,
+        "departmental_impact": db_case.impact_on_departments,
         "directives_count": len(pipeline_result["directives"]),
         "metrics": pipeline_result["metrics"],
         "acceptance_criteria": pipeline_result["acceptance_criteria"],
