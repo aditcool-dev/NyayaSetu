@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, Sparkles, Shield, Zap, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { uploadPipeline } from '../services/api';
+import { uploadCase, getPipelineHealth } from '../services/api';  // Using full LLM route
 import { useAppStore } from '../stores/appStore';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -33,7 +33,7 @@ export default function Upload() {
     setError(null); setLoading(true); setStep(1);
     stepTimerRef.current = setTimeout(() => setStep(2), 3000);
     try {
-      const data = await uploadPipeline(file);
+      const data = await uploadCase(file);  // Using full LLM route (more reliable)
       clearStepTimer(); setStep(3);
       queryClient.invalidateQueries({ queryKey: ['cases'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
