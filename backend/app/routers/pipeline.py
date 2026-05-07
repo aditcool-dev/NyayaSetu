@@ -60,7 +60,6 @@ def _persist_to_db(
     metadata = pipeline_result.get("metadata", {})
     metrics = pipeline_result.get("metrics", {})
     directives = pipeline_result.get("directives", [])
-    case_analysis = pipeline_result.get("case_analysis", {})
 
     # Parse judgment date
     jd_str = metadata.get("judgment_date") or metrics.get("judgment_date_parsed")
@@ -83,19 +82,12 @@ def _persist_to_db(
         from datetime import timedelta
         appeal_end = jd_dt + timedelta(days=90)
 
-    # Use case analysis for summary and insights (with fallbacks)
-    summary = case_analysis.get("summary") if case_analysis else None
-    
-    if not summary:
-        # Fallback to simple summary if case analysis failed
-        summary = (
-            f"{metadata.get('case_no', 'Case')} - "
-            f"{metadata.get('court', 'Court')}. "
-            f"{metrics.get('final_directives', 0)} directives extracted."
-        )
-
-    legal_takeaway = case_analysis.get("legal_takeaway") if case_analysis else None
-    dept_impact = case_analysis.get("departmental_impact") if case_analysis else None
+    # Simple summary without case analysis
+    summary = (
+        f"{metadata.get('case_no', 'Case')} - "
+        f"{metadata.get('court', 'Court')}. "
+        f"{len(directives)} directives extracted."
+    )
 
     db_case = Case(
         case_number=metadata.get("case_no") or "Unknown",
@@ -106,8 +98,8 @@ def _persist_to_db(
         parties_petitioner=metadata.get("parties_petitioner") or "Unknown",
         parties_respondent=metadata.get("parties_respondent") or "Unknown",
         summary=summary,
-        key_legal_takeaway=legal_takeaway,
-        impact_on_departments=dept_impact,
+        key_legal_takeaway=None,
+        impact_on_departments=None,
         appeal_window_end=appeal_end,
         pdf_path=pdf_path,
         status="pending",
@@ -221,8 +213,6 @@ async def process_judgment(
         "case_number": db_case.case_number,
         "court": db_case.court,
         "summary": db_case.summary,
-        "legal_takeaway": db_case.key_legal_takeaway,
-        "departmental_impact": db_case.impact_on_departments,
         "directives_count": len(pipeline_result["directives"]),
         "metrics": pipeline_result["metrics"],
         "acceptance_criteria": pipeline_result["acceptance_criteria"],

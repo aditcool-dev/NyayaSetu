@@ -214,38 +214,6 @@ async def run_pipeline_async(
         log(f"  ⚠ {llm_result['failed_chunks']} chunks failed — check API key and rate limits")
 
     # -------------------------------------------------------------------------
-    # MODULE 6.5: Case-Level Analysis (Optional)
-    # -------------------------------------------------------------------------
-    log("MODULE 6.5: Case-Level Analysis (summary, legal takeaway, dept impact)")
-    m6_5_start = time.time()
-
-    # Make case analysis optional - if it fails, continue without it
-    case_analysis = {
-        "summary": None,
-        "legal_takeaway": None,
-        "departmental_impact": None,
-        "elapsed_sec": 0.0,
-    }
-    
-    try:
-        from pipeline.case_analyzer import analyze_case_async
-
-        # Reconstruct full text from cleaned pages
-        full_text = "\n\n".join(
-            f"--- Page {p['page_num']} ---\n{p['text']}"
-            for p in clean_result["cleaned_pages"]
-        )
-
-        case_analysis = await analyze_case_async(full_text, metadata)
-        
-        m6_5_time = round(time.time() - m6_5_start, 2)
-        log(f"  → Case analysis complete in {m6_5_time}s")
-    except Exception as e:
-        m6_5_time = round(time.time() - m6_5_start, 2)
-        log(f"  ⚠ Case analysis skipped due to error: {e}")
-        log(f"  → Pipeline will continue without case analysis")
-
-    # -------------------------------------------------------------------------
     # MODULE 7: Post-Processing & Deduplication
     # -------------------------------------------------------------------------
     log("MODULE 7: Post-Processing & Deduplication")
@@ -304,7 +272,6 @@ async def run_pipeline_async(
     return {
         "directives": postprocess_result["directives"],
         "metadata": metadata,
-        "case_analysis": case_analysis,  # NEW: summary, legal_takeaway, dept_impact
         "metrics": metrics,
         "acceptance_criteria": acceptance,
         "pipeline_log": pipeline_log,
